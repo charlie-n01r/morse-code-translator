@@ -1,0 +1,8 @@
+[package]
+name = "morse-code-translator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bimap = "0.6.3"
+once_cell = "1.21.4"
