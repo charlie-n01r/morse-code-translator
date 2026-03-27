@@ -1,21 +1,22 @@
 -- --- .-. ... . / -.-. --- -.. . / - .-. .- -. ... .-.. .- - --- .-.
 
 # Morse Code Translator
-A translator app for converting between Morse Code, text, and audio.
-
 .- / - .-. .- -. ... .-.. .- - --- .-. / .- .--. .--. / ..-. --- .-. / -.-. --- -. ...- . .-. - .. -. --. / -... . - .-- . . -. / -- --- .-. ... . / -.-. --- -.. . --..-- / - . -..- - --..-- / .- -. -.. / .- ..- -.. .. --- .-.-.-
+
+A translator app for converting between Morse Code, text, and audio.
 
 ## How to use
 Run the executable file as shown below.
 
 ```sh
-morse-code-translaor
+morse-code-translator
 ```
 
-A prompt asking for text will show up on the screen. You can type any text you want and the tool will print the text converted to morse.
+A menu will pop up, where you can choose to translate from `[1]`Plain Text to Morse Code or `[2]`viceversa.
+
+Once you pick your choice, you will be prompted to type any text you want and the tool will print the results. Send `|` to quit.
 
 ## Roadmap
-- Translating from morse to plain text
 - Translation of text files
 - GUI
 - Play morse code
