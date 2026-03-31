@@ -1,87 +1,70 @@
-use std::io::{stdin, stdout, Write, Error};
-mod dictionary;
+use clap::{Parser, ArgGroup};
+use std::path::PathBuf;
+use std::fs;
 
-fn translate(option: &str) -> Result<(), Error> {
-    let mut input = String::new();
-    loop {
-        // Clear the string before each loop and read input
-        input.clear();
-        print!("Insert text to translate [send `|` to quit]: ");
-        stdout().flush().unwrap();
-        match stdin().read_line(&mut input) {
-            Ok(_) => {
-                let trimmed = input.trim();
-                // Quit
-                if trimmed == "|" {
-                    return Ok(())
-                }
+use crate::modules::translate::translate;
+mod modules;
 
-                match option {
-                    // Text to Morse
-                    "1" => {
-                        let message = trimmed.to_uppercase();
-                        for c in message.chars() {
-                            match dictionary::DICTIONARY.get_by_left(&c) {
-                                Some(letter) => print!("{} ", letter),
-                                None => {
-                                    println!("\nError! Letter not found!");
-                                    continue;
-                                }
-                            }
-                        }
-                    },
-                    // Morse to Text
-                    _ => {
-                        let words = trimmed.split(" / ");
-                        for word in words {
-                            let letters = word.split(' ');
-                            for letter in letters {
-                                match dictionary::DICTIONARY.get_by_right(letter) {
-                                    Some(l) => print!("{}", l),
-                                    None => {
-                                        println!("\nError! Letter not found!");
-                                        continue;
-                                    }
-                                }
-                            }
+#[derive(Parser, Debug)]
+#[command(
+    version,
+    about,
+    long_about = None,
+    group(
+        ArgGroup::new("mode")
+            .args(["to_text", "to_morse"]) // Make either to_text or to_morse mandatory
+            .required(true)
+            .multiple(false)
+    )
+)]
+struct Cli {
+    #[arg(short='t', long="to-text")]
+    to_text: bool,
 
-                            print!(" ");
-                        }
-                    }
-                }
-            },
-            // Return io Error
-            Err(err) => return Err(err)
-        }
+    #[arg(short='m', long="to-morse")]
+    to_morse: bool,
 
-        println!("");
-    }
+    input: Option<String>,
+
+    #[arg(short, long, requires="mode")]
+    file: Option<PathBuf>,
+
+    #[arg(short, long, requires="mode")]
+    output: Option<PathBuf>,
 }
 
-fn menu() -> Result<(), Error> {
-    let mut option = String::new();
-    print!("---Menu---\n[1] Plain text to Morse Code\n[2] Morse Code to Plain text\n\n> ");
-    stdout().flush().unwrap();
 
-    match stdin().read_line(&mut option) {
-        Ok(_) => {
-            let trimmed = option.trim();
-            match trimmed  {
-                // Only valid options are 1 (text to morse) or 2 (morse to text)
-                "1" | "2" => translate(trimmed),
-                _ => {
-                    println!("Incorrect option. Try again.");
-                    Ok(())
-                }
-            }
-        },
-        Err(err) => Err(err)
-    }
-}
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Cli::parse();
 
-fn main() {
-    match menu() {
-        Ok(_) => (),
-        Err(err) => println!("{}", err)
+    // If --file is provided, then it takes the input from the file contents
+    let input_text = if let Some(file_path) = args.file {
+        fs::read_to_string(file_path)?
+    // Otherwise it takes the provided string argument as input
+    } else if let Some(text) = args.input {
+        text
+    } else {
+        eprintln!("Error: must provide input text or --file");
+        std::process::exit(1);
+    };
+
+    // If the flag is --to-morse is provided, send the input to the translator with the flag 1
+    let output_text = if args.to_morse {
+        translate('1', &input_text)?
+    } else if args.to_text {
+    // Otherwise send the input to the translator with flag 2
+        translate('2', &input_text)?
+    } else {
+        unreachable!("Clap guarantees one direction is set")
+    };
+
+    // If the flag --output was provided, write output to file path
+    if let Some(out_path) = args.output {
+        std::fs::write(out_path, &output_text)?;
+    } else {
+    // Otherwise print results to screen
+        println!("{}", output_text);
     }
+
+    Ok(())
 }
